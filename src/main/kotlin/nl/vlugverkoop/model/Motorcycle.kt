@@ -1,11 +1,11 @@
 package nl.vlugverkoop.model
 
 /**
- * A motorcycle listed for sale on Vlugverkoop.
+ * A motorcycle listed for sale on VlugVerkoop.
  *
  * @property engineCc engine displacement in cubic centimetres.
- * @property style the riding style, usee for filtering.
- * @propery LicenseCategory the lowest license needed to ride this motorcycle.
+ * @property style the riding style, used for filtering.
+ * @property licenseCategory the lowest license needed to ride this motorcycle.
  */
 class Motorcycle(
     id: Int,
@@ -21,8 +21,24 @@ class Motorcycle(
 
     override fun calculateListingFee(): Double = LISTING_FEE
 
+    /**
+     * Checks the motorcycle-specific rules.
+     * Returns a list of error messages; an empty list means the motorcycle is valid.
+     */
+    fun validate(): List<String> {
+        val errors = mutableListOf<String>()
+        if (engineCc !in MIN_ENGINE_CC..MAX_ENGINE_CC) {
+            errors.add("engineCc must be between $MIN_ENGINE_CC and $MAX_ENGINE_CC")
+        }
+        if (licenseCategory < LicenseCategory.minimumFor(engineCc)) {
+            errors.add("LicenseCategory $licenseCategory is not allowed for $engineCc cc")
+        }
+        return errors
+    }
     companion object {
         private const val LISTING_FEE = 4.95
+        private const val MIN_ENGINE_CC = 50
+        private const val MAX_ENGINE_CC = 2500
     }
 }
 
