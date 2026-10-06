@@ -1,0 +1,9 @@
+### Get all cars
+GET http://localhost:127.0.0.1/cars
+
+
+### Delete car with id 1
+DELETE http://localhost:127.0.0.1/cars/1
+
+### Delete a car that does not exist
+DELETE http://localhost:127.0.0.1/cars/99

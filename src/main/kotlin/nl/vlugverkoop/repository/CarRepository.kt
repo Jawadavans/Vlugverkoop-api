@@ -15,4 +15,7 @@ class CarRepository {
 
     /** Returns all cars. */
     fun getAll(): List<Car> = cars
+
+    /** Deletes the car with the given id. Returns true if a car was removed. */
+    fun delete(id: Int): Boolean = cars.removeIf { it.id == id }
 }
