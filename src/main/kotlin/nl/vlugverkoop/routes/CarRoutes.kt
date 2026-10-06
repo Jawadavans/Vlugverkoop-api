@@ -1,11 +1,14 @@
 package nl.vlugverkoop.routes
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import nl.vlugverkoop.dto.CreateCarRequest
 import nl.vlugverkoop.dto.toResponse
 import nl.vlugverkoop.repository.CarRepository
 
@@ -19,6 +22,20 @@ fun Route.carRoutes(repository: CarRepository) {
         get {
             val cars = repository.getAll().map { it.toResponse() }
             call.respond(cars)
+        }
+
+        // POST /cars → creates a new car
+        post {
+            val request = call.receive<CreateCarRequest>()
+            val car = repository.add(
+                brand = request.brand,
+                model = request.model,
+                year = request.year,
+                price = request.price,
+                mileage = request.mileage,
+                doors = request.doors
+            )
+            call.respond(HttpStatusCode.Created, car.toResponse())
         }
 
         // DELETE /cars/{id} → deletes one car
