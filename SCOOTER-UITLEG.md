@@ -7,8 +7,26 @@ Dit document legt in gewone taal uit wat er voor de **scooter** in de VlugVerkoo
 ## In het kort
 
 - Een scooter heeft nu een **snelheid** (25 of 45 km/u) en een **kentekenkleur** (blauw of geel), zoals het plan van aanpak vraagt.
-- De app kan alle scooters ophalen via het adres **`/scooters`**.
-- Er zijn **3 automatische tests** die controleren of `/scooters` goed werkt. Ze slagen alle drie.
+- Via het adres **`/scooters`** kan de app scooters **ophalen**, **plaatsen** en **verwijderen**, net als bij auto's.
+- Er zijn **6 automatische tests** die controleren of dat goed werkt. Ze slagen alle zes.
+
+### Scooter naast auto
+
+Scooters hebben precies dezelfde bestanden en endpoints als auto's (gemaakt door Jawad):
+
+| Wat | Auto | Scooter |
+|---|---|---|
+| Formulier (model) | `model/Car.kt` | `model/Scooter.kt` |
+| Magazijn | `repository/CarRepository.kt` | `repository/ScooterRepository.kt` |
+| Verpakking naar de app | `dto/CarResponse.kt` | `dto/ScooterResponse.kt` |
+| Plaatsformulier van de app | `dto/CreateCarRequest.kt` | `dto/CreateScooterRequest.kt` |
+| Loket | `routes/CarRoutes.kt` | `routes/ScooterRoutes.kt` |
+| Alles ophalen | `GET /cars` | `GET /scooters` |
+| Nieuwe plaatsen | `POST /cars` | `POST /scooters` |
+| Eén verwijderen | `DELETE /cars/{id}` | `DELETE /scooters/{id}` |
+| Voorbeeldverzoeken | `requests.http` | `requests.http` |
+
+Het enige verschil is de **scooterregel**: plaats je een scooter met een andere snelheid dan 25 of 45 km/u, dan weigert de server hem (code 400).
 
 ---
 
@@ -21,6 +39,7 @@ Zie de server als een winkel:
 | `Scooter.kt` | Het **invulformulier** | Beschrijft wat een scooter is en welke regels gelden |
 | `ScooterRepository.kt` | Het **magazijn** | Hier liggen de scooters opgeslagen |
 | `ScooterResponse.kt` | De **verpakking** | Bepaalt welke gegevens naar de app gaan |
+| `CreateScooterRequest.kt` | Het **plaatsformulier** | Wat de app invult als iemand een scooter plaatst |
 | `ScooterRoutes.kt` | Het **loket** | Het adres (`/scooters`) waar de app aanklopt |
 | `Routing.kt` | De **lijst met loketten** | Zet het scooterloket open in de server |
 
@@ -71,6 +90,13 @@ Een `enum` is een **vaste keuzelijst**, net als een uitklapmenu met maar twee op
 
 Hier staan voorlopig 3 voorbeeldscooters. Later komt er een echte database voor in de plaats.
 
+Het magazijn kan:
+- **alle scooters geven** (`getAll`)
+- **een scooter toevoegen** (`add`). De nieuwe scooter krijgt automatisch het volgende nummer.
+- **een scooter verwijderen** (`delete`)
+
+Let op: de scooters staan in het geheugen. Herstart je de server, dan zijn toegevoegde of verwijderde scooters weer terug zoals in deze tabel.
+
 | Id | Merk | Model | Bouwjaar | Prijs | Km-stand | Snelheid | Kenteken |
 |---|---|---|---|---|---|---|---|
 | 1 | Vespa | Primavera | 2021 | € 2650 | 4200 | 45 km/u | Geel |
@@ -93,11 +119,25 @@ Dit bepaalt welke gegevens de app krijgt:
 | `plateColor` | Kentekenkleur (`BLUE` of `YELLOW`) |
 | `listingFee` | Advertentiekosten (nu € 2,95) |
 
-### 4. `routes/ScooterRoutes.kt` – het loket
+### 4. `dto/CreateScooterRequest.kt` – het plaatsformulier
 
-Maakt het adres **`GET /scooters`**. Als de app dit opvraagt, krijgt hij alle scooters terug.
+Dit vult de app in als iemand een scooter te koop zet: merk, model, bouwjaar, prijs, kilometerstand en snelheid.
 
-### 5. `Routing.kt` – de lijst met loketten
+De **kentekenkleur staat er niet in**. Die rekent de scooter zelf uit op basis van de snelheid.
+
+### 5. `routes/ScooterRoutes.kt` – het loket
+
+Hier staan drie adressen:
+
+| Adres | Wat het doet | Antwoord als het goed gaat | Antwoord als het fout gaat |
+|---|---|---|---|
+| `GET /scooters` | Alle scooters ophalen | **200 OK** + de lijst | – |
+| `POST /scooters` | Een nieuwe scooter plaatsen | **201 Created** + de nieuwe scooter | **400 Bad Request** als de snelheid niet 25 of 45 is |
+| `DELETE /scooters/{id}` | Eén scooter verwijderen, bijvoorbeeld `/scooters/1` | **204 No Content** (verwijderd) | **404 Not Found** als het nummer niet bestaat, **400** als het nummer geen getal is |
+
+Die getallen (200, 201, 204, 400, 404) heten **statuscodes**. Zo ziet de app meteen of iets gelukt is.
+
+### 6. `Routing.kt` – de lijst met loketten
 
 Hier is één regel bijgekomen, `scooterRoutes(ScooterRepository())`, zodat het scooterloket echt openstaat.
 
@@ -127,15 +167,20 @@ Zo ziet het antwoord van `/scooters` eruit (eerste scooter):
 
 De tests staan in **`src/test/kotlin/ScooterRoutesTest.kt`**.
 
-Een test is een stukje code dat de app nadoet: hij vraagt `/scooters` op en controleert of het antwoord klopt. De server hoeft daarvoor niet aan te staan. In het plan van aanpak heten dit **integratietesten met Ktor testApplication**.
+Een test is een stukje code dat de app nadoet: hij gebruikt `/scooters` en controleert of het antwoord klopt. De server hoeft daarvoor niet aan te staan. Elke test begint met een vers magazijn met de 3 voorbeeldscooters. In het plan van aanpak heten dit **integratietesten met Ktor testApplication**.
 
 | # | Naam van de test | Wat wordt gecontroleerd |
 |---|---|---|
 | 1 | `GET scooters returns 200 with JSON` | De server antwoordt met "OK" (code 200) en stuurt JSON terug. |
 | 2 | `GET scooters returns all scooters with their details` | Er komen 3 scooters terug, en de Vespa heeft het juiste merk, model, de juiste prijs en snelheid. |
 | 3 | `GET scooters gives blue plate for 25 kmh and yellow plate for 45 kmh` | 25 km/u geeft een blauw kenteken en 45 km/u een geel kenteken. |
+| 4 | `POST scooters creates a scooter with the right plate colour` | Een nieuwe scooter van 25 km/u plaatsen geeft code 201, nummer 4 en een blauw kenteken. |
+| 5 | `POST scooters with a speed other than 25 or 45 returns 400` | Een scooter van 80 km/u wordt geweigerd (code 400) en wordt **niet** opgeslagen. |
+| 6 | `DELETE scooters removes the scooter and returns 404 for an unknown id` | Scooter 1 verwijderen lukt (code 204) en hij is echt weg. Scooter 99 bestaat niet en geeft code 404. |
 
-**Resultaat:** 3 van 3 geslaagd, 0 fouten.
+**Resultaat:** 6 van 6 geslaagd, 0 fouten.
+
+Moet je per persoon 3 endpoint-tests inleveren? Een goede keuze is test 1, 4 en 6. Dan heb je elk endpoint (GET, POST en DELETE) één keer getest.
 
 Er bestaat ook nog een oudere test, `ServerTest.kt`. Die controleert alleen of de server opstart (adres `/`).
 
@@ -151,6 +196,15 @@ Er bestaat ook nog een oudere test, `ServerTest.kt`. Die controleert alleen of d
 De voortgangsbalk blijft op **"83% EXECUTING"** staan. Dat is normaal: de server draait. Stoppen doe je met **Ctrl+C**.
 
 Open daarna in je browser: **http://127.0.0.1:8080/scooters**
+
+### Plaatsen en verwijderen proberen
+
+Een browser kan alleen **ophalen** (GET). Om te **plaatsen** (POST) of te **verwijderen** (DELETE) gebruik je het bestand **`requests.http`**:
+
+1. Start de server.
+2. Open `requests.http` in IntelliJ.
+3. Klik op de groene ▶ naast een verzoek, bijvoorbeeld *"Create a new scooter"*.
+4. Onderaan zie je het antwoord van de server.
 
 ### De tests uitvoeren
 
@@ -195,6 +249,10 @@ Open daarna in je browser: **http://127.0.0.1:8080/scooters**
 | **override** | "Ik vul hier zelf in wat het algemene formulier verplicht stelt" |
 | **endpoint** | Een adres op de server, zoals `/scooters` |
 | **GET** | "Geef me gegevens" (alleen ophalen, niets veranderen) |
+| **POST** | "Sla dit nieuwe ding op" (bijvoorbeeld een scooter plaatsen) |
+| **DELETE** | "Verwijder dit" |
+| **Statuscode** | Een getal waarmee de server zegt hoe het ging: 200/201/204 = gelukt, 400 = foute invoer, 404 = niet gevonden |
+| **Request** | Wat de app naar de server stuurt (het plaatsformulier) |
 | **JSON** | De tekstvorm waarin de server gegevens naar de app stuurt |
 | **Repository** | De plek waar gegevens worden opgeslagen en opgehaald |
 | **DTO / Response** | De "verpakking" van gegevens die naar de app gaan |
