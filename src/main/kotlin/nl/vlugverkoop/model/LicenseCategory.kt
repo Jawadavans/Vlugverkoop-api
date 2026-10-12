@@ -5,18 +5,33 @@ package nl.vlugverkoop.model
  * The order matters: A1 < A2 < A, so categories can be compared.
  */
 enum class LicenseCategory {
+    /** Light motorcycles, up to 125 cc and 11 kW. */
     A1,
+
+    /** Medium motorcycles, up to 35 kW. */
     A2,
+
+    /** Every motorcycle, no limit. */
     A;
 
     companion object {
-        /**the highest enigine size (in CC) an A1 License allows.*/
-        private const val A1_MAX_CC= 125
+        /** The highest engine size (in cc) an A1 licence allows. */
+        private const val A1_MAX_CC = 125
+
+        /** The highest power (in kW) an A1 licence allows. */
+        private const val A1_MAX_KW = 11
+
+        /** The highest power (in kW) an A2 licence allows. */
+        private const val A2_MAX_KW = 35
 
         /**
-         * Returns the lowest Licence needed to ride a motorcycle with this engine size.
-         * Above 125CC at Least A2 needed.
+         * Returns the lowest licence needed to ride a motorcycle with this engine size and power.
+         * A1 allows up to 125 cc and 11 kW, A2 allows up to 35 kW, above that A is needed.
          */
-        fun minimumFor(engineCc: Int): LicenseCategory = if (engineCc <= A1_MAX_CC) A1 else A2
+        fun minimumFor(engineCc: Int, powerKw: Int): LicenseCategory = when {
+            engineCc <= A1_MAX_CC && powerKw <= A1_MAX_KW -> A1
+            powerKw <= A2_MAX_KW -> A2
+            else -> A
+        }
     }
 }
