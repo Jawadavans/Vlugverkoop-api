@@ -7,3 +7,6 @@ build/
 
 # Local settings
 local.properties
+
+# Local database
+*.db

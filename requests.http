@@ -1,0 +1,56 @@
+### Get all cars
+GET http://127.0.0.1:8080/cars
+
+### Delete car with id 1
+DELETE http://127.0.0.1:8080/cars/1
+
+### Delete a car that does not exist
+DELETE http://127.0.0.1:8080/cars/99
+
+### Create a new car
+POST http://127.0.0.1:8080/cars
+Content-Type: application/json
+
+{
+  "brand": "Audi",
+  "model": "A3",
+  "year": 2019,
+  "price": 17500.0,
+  "mileage": 60000,
+  "doors": 5
+}
+
+### Get all scooters
+GET http://127.0.0.1:8080/scooters
+
+### Delete scooter with id 1
+DELETE http://127.0.0.1:8080/scooters/1
+
+### Delete a scooter that does not exist
+DELETE http://127.0.0.1:8080/scooters/99
+
+### Create a new scooter (45 km/h → yellow plate)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 45
+}
+
+### Create a scooter with an invalid speed (gives 400 Bad Request)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 80
+}
