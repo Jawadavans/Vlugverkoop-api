@@ -21,7 +21,7 @@ class Motorcycle(
     val powerKw: Int,
     val style: MotorcycleStyle,
     val licenseCategory: LicenseCategory
-) : Vehicle(id, brand, model, year, price, mileage) {
+) : Vehicle(id, brand, model, year, price, mileage), Validatable {
 
     override fun calculateListingFee(): Double = 4.95
 
@@ -29,7 +29,7 @@ class Motorcycle(
      * Checks whether this motorcycle may be listed.
      * Returns a list of error messages; an empty list means the motorcycle is valid.
      */
-    fun validate(): List<String> {
+    override fun validate(): List<String> {
         val errors = mutableListOf<String>()
 
         if (brand.isBlank()) {
