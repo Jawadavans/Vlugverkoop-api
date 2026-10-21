@@ -70,6 +70,7 @@ Omdat de keuzelijst op volgorde staat (A1 < A2 < A), kun je ze vergelijken. Iema
 | `GET /motorcycles/styles` | Alle rijstijlen, voor het uitklapmenu | 200 |
 | `GET /motorcycles/{id}` | Eén motor | 200, of 404 als hij niet bestaat |
 | `POST /motorcycles` | Nieuwe advertentie plaatsen | 201, of 400 met `{"errors":[...]}` |
+| `PUT /motorcycles/{id}` | Advertentie bijwerken, bijvoorbeeld na een prijswijziging | 200, 400 met `{"errors":[...]}`, of 404 als hij niet bestaat |
 | `DELETE /motorcycles/{id}` | Advertentie verwijderen | 204, of 404 als hij niet bestaat |
 
 Let op bij `license`: dit is het rijbewijs van de **koper**. `license=A2` geeft alle motoren die je met A2 mag rijden (A1 en A2).
@@ -117,20 +118,15 @@ De MT-07 en de Ninja 650 zijn de A2-versies, die zijn begrensd op 35 kW.
 
 ## De tests
 
-**`src/test/kotlin/MotorcycleTest.kt`** – unit-tests (3), zonder server:
+**`src/test/kotlin/MotorcycleRoutesTest.kt`** – integratietests (5), via de echte API, één per CRUD-stap:
 
-| # | Test | Wat wordt gecontroleerd |
-|---|---|---|
-| 1 | `valid motorcycle has no validation errors` | Een goede motor geeft geen fouten. |
-| 2 | `A1 licence is rejected for a motorcycle above 125 cc` | A1 mag niet bij 689 cc. |
-| 3 | `A2 licence is rejected for a motorcycle above 35 kW` | A2 mag niet bij 54 kW. |
-
-**`src/test/kotlin/MotorcycleRoutesTest.kt`** – integratietests (2), via de echte API:
-
-| # | Test | Wat wordt gecontroleerd |
-|---|---|---|
-| 4 | `GET motorcycles returns all seeded motorcycles` | `/motorcycles` geeft 200 en 6 motoren. |
-| 5 | `POST motorcycle with wrong licence returns 400 with the reason` | Een motor met het verkeerde rijbewijs wordt geweigerd met 400 en de juiste foutmelding. |
+| # | Test | CRUD | Wat wordt gecontroleerd |
+|---|---|---|---|
+| 1 | `GET motorcycles returns all seeded motorcycles` | Read | `/motorcycles` geeft 200 en 6 motoren. |
+| 2 | `GET motorcycles by id returns that motorcycle and 404 for an unknown id` | Read | `/motorcycles/3` geeft de BMW, een onbekend id geeft 404. |
+| 3 | `POST motorcycles creates a motorcycle and rejects a wrong licence with 400` | Create | Een goede motor krijgt 201 en een nieuw id; A1 bij 373 cc wordt geweigerd met 400 en niet opgeslagen. |
+| 4 | `PUT motorcycles replaces a motorcycle, rejects a wrong licence and 404s an unknown id` | Update | De motor wordt vervangen; A2 bij 54 kW wordt geweigerd met 400 en niet opgeslagen; een onbekend id geeft 404. |
+| 5 | `DELETE motorcycles removes the motorcycle and returns 404 for an unknown id` | Delete | De motor is weg na verwijderen; een onbekend id geeft 404. |
 
 Uitvoeren:
 

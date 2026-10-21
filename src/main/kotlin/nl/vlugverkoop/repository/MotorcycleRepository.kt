@@ -57,6 +57,20 @@ class MotorcycleRepository {
     /** Returns the id the next new motorcycle should get. */
     fun nextId(): Int = (motorcycles.maxOfOrNull { it.id } ?: 0) + 1
 
+    /**
+     * Replaces the stored motorcycle that has the same id as [motorcycle].
+     *
+     * @return false when no motorcycle with that id exists.
+     */
+    fun update(motorcycle: Motorcycle): Boolean {
+        val index = motorcycles.indexOfFirst { it.id == motorcycle.id }
+        if (index == -1) {
+            return false
+        }
+        motorcycles[index] = motorcycle
+        return true
+    }
+
     /** Removes the motorcycle with this [id]. Returns false when it did not exist. */
     fun delete(id: Int): Boolean = motorcycles.removeIf { it.id == id }
 }

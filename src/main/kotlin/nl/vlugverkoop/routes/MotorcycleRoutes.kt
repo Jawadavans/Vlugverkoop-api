@@ -8,6 +8,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import nl.vlugverkoop.dto.CreateMotorcycleRequest
 import nl.vlugverkoop.dto.ValidationErrorResponse
@@ -71,6 +72,36 @@ fun Route.motorcycleRoutes(repository: MotorcycleRepository) {
 
             repository.add(motorcycle)
             call.respond(HttpStatusCode.Created, motorcycle.toResponse())
+        }
+
+        // PUT /motorcycles/{id} → replaces an existing listing, for example after a price change,
+        // or returns 404 when it does not exist
+        put("/{id}") {
+            val id = call.parameters["id"]?.toIntOrNull()
+            if (id == null || repository.getById(id) == null) {
+                call.respond(HttpStatusCode.NotFound)
+                return@put
+            }
+
+            val request = try {
+                call.receive<CreateMotorcycleRequest>()
+            } catch (e: BadRequestException) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf("invalid motorcycle data")))
+                return@put
+            }
+
+            val motorcycle = request.toMotorcycle(id)
+            val errors = motorcycle.validate()
+            if (errors.isNotEmpty()) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(errors))
+                return@put
+            }
+
+            if (repository.update(motorcycle)) {
+                call.respond(HttpStatusCode.OK, motorcycle.toResponse())
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
 
         // DELETE /motorcycles/{id} → removes a listing, or returns 404 when it does not exist
