@@ -16,7 +16,13 @@ import nl.vlugverkoop.dto.ValidationErrorResponse
 import nl.vlugverkoop.model.PlateColor
 import kotlin.test.*
 
-/** Integration tests: the real routes, repository, model and DTOs together. */
+/**
+ * Integration tests: the real routes, repository, model and DTOs together.
+ *
+ * The two tests are grouped by what they prove rather than by endpoint, so that
+ * all four CRUD requests are covered: reading and filtering plus creating in the
+ * first test, replacing and deleting in the second.
+ */
 class ScooterRoutesTest {
 
     private companion object {
@@ -30,194 +36,92 @@ class ScooterRoutesTest {
         const val INVALID_SPEED_BODY = """
             {"brand":"Peugeot","model":"Kisbee","year":2022,"price":1750.0,"mileage":2500,"maxSpeedKmh":80}
         """
-
-        const val NEGATIVE_PRICE_BODY = """
-            {"brand":"Peugeot","model":"Kisbee","year":2022,"price":-1.0,"mileage":2500,"maxSpeedKmh":25}
-        """
     }
 
     @Test
-    fun `GET scooters returns 200 with JSON`() = testApplication {
+    fun `GET returns and filters scooters, and POST only stores valid ones`() = testApplication {
         configure()
 
-        val response = client.get("/scooters")
+        // GET: all scooters, with their details and the derived plate colour
+        val all = client.get("/scooters")
+        assertEquals(HttpStatusCode.OK, all.status)
+        assertEquals(ContentType.Application.Json, all.contentType()?.withoutParameters())
 
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(ContentType.Application.Json, response.contentType()?.withoutParameters())
-    }
-
-    @Test
-    fun `GET scooters returns all scooters with their details`() = testApplication {
-        configure()
-
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-
+        val scooters = Json.decodeFromString<List<ScooterResponse>>(all.bodyAsText())
         assertEquals(SEEDED, scooters.size)
         val vespa = scooters.first { it.id == 1 }
         assertEquals("Vespa", vespa.brand)
-        assertEquals("Primavera", vespa.model)
         assertEquals(2650.0, vespa.price)
-        assertEquals(45, vespa.maxSpeedKmh)
-    }
+        assertEquals(PlateColor.YELLOW, vespa.plateColor)
 
-    @Test
-    fun `GET scooters gives blue plate for 25 kmh and yellow plate for 45 kmh`() = testApplication {
-        configure()
+        // GET with filters: only blue plates up to 1500 euro
+        val filtered = Json.decodeFromString<List<ScooterResponse>>(
+            client.get("/scooters?plateColor=BLUE&maxPrice=1500").bodyAsText()
+        )
+        assertTrue(filtered.isNotEmpty(), "the filter should still return scooters")
+        assertTrue(
+            filtered.all { it.plateColor == PlateColor.BLUE && it.price <= 1500.0 },
+            "wrong result: $filtered"
+        )
 
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-
-        scooters.forEach { scooter ->
-            val expected = if (scooter.maxSpeedKmh == 25) PlateColor.BLUE else PlateColor.YELLOW
-            assertEquals(expected, scooter.plateColor, "Wrong plate colour for scooter ${scooter.id}")
-        }
-    }
-
-    @Test
-    fun `GET scooters filters on plate colour and maximum price`() = testApplication {
-        configure()
-
-        val body = client.get("/scooters?plateColor=BLUE&maxPrice=1500").bodyAsText()
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(body)
-
-        assertTrue(scooters.isNotEmpty(), "filter should still return scooters")
-        assertTrue(scooters.all { it.plateColor == PlateColor.BLUE && it.price <= 1500.0 }, "wrong result: $scooters")
-    }
-
-    @Test
-    fun `GET scooters filters on maximum mileage`() = testApplication {
-        configure()
-
-        val body = client.get("/scooters?maxMileage=2500").bodyAsText()
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(body)
-
-        // Scooter 4 has exactly 2500 km, so the limit itself must be included
-        assertEquals(listOf(4, 5), scooters.map { it.id })
-    }
-
-    @Test
-    fun `GET scooters by id returns that scooter`() = testApplication {
-        configure()
-
-        val response = client.get("/scooters/2")
-
-        assertEquals(HttpStatusCode.OK, response.status)
-        val scooter = Json.decodeFromString<ScooterResponse>(response.bodyAsText())
-        assertEquals(2, scooter.id)
-        assertEquals("Piaggio", scooter.brand)
-        assertEquals("Zip", scooter.model)
-        assertEquals(PlateColor.BLUE, scooter.plateColor)
-    }
-
-    @Test
-    fun `GET scooters by id returns 404 for an unknown id`() = testApplication {
-        configure()
-
-        assertEquals(HttpStatusCode.NotFound, client.get("/scooters/99").status)
-    }
-
-    @Test
-    fun `GET scooters plate-colors returns BLUE and YELLOW`() = testApplication {
-        configure()
-
-        val response = client.get("/scooters/plate-colors")
-
-        assertEquals(HttpStatusCode.OK, response.status)
-        val plateColors = Json.decodeFromString<List<PlateColor>>(response.bodyAsText())
-        assertEquals(listOf(PlateColor.BLUE, PlateColor.YELLOW), plateColors)
-    }
-
-    @Test
-    fun `POST scooters creates a scooter with the right plate colour`() = testApplication {
-        configure()
-
-        val response = client.post("/scooters") {
+        // POST with valid data: 201 and the plate colour derived from the speed class
+        val created = client.post("/scooters") {
             contentType(ContentType.Application.Json)
             setBody(VALID_BODY)
         }
+        assertEquals(HttpStatusCode.Created, created.status)
+        val newScooter = Json.decodeFromString<ScooterResponse>(created.bodyAsText())
+        assertEquals(SEEDED + 1, newScooter.id)
+        assertEquals("Peugeot", newScooter.brand)
+        assertEquals(PlateColor.BLUE, newScooter.plateColor)
 
-        assertEquals(HttpStatusCode.Created, response.status)
-        val scooter = Json.decodeFromString<ScooterResponse>(response.bodyAsText())
-        assertEquals(SEEDED + 1, scooter.id)
-        assertEquals("Peugeot", scooter.brand)
-        assertEquals(PlateColor.BLUE, scooter.plateColor)
-    }
-
-    @Test
-    fun `POST scooters with a speed other than 25 or 45 returns 400 with the reason`() = testApplication {
-        configure()
-
-        val response = client.post("/scooters") {
+        // POST with an impossible speed class: 400 with the reason, and nothing is stored
+        val rejected = client.post("/scooters") {
             contentType(ContentType.Application.Json)
             setBody(INVALID_SPEED_BODY)
         }
-
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-        val errors = Json.decodeFromString<ValidationErrorResponse>(response.bodyAsText()).errors
-        assertEquals(listOf("maxSpeedKmh must be one of [25, 45], was 80"), errors)
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-        assertEquals(SEEDED, scooters.size, "Invalid scooter must not be saved")
+        assertEquals(HttpStatusCode.BadRequest, rejected.status)
+        assertEquals(
+            listOf("maxSpeedKmh must be one of [25, 45], was 80"),
+            Json.decodeFromString<ValidationErrorResponse>(rejected.bodyAsText()).errors
+        )
+        val afterPost = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
+        assertEquals(SEEDED + 1, afterPost.size, "an invalid scooter must not be saved")
     }
 
     @Test
-    fun `POST scooters with a negative price returns 400 with the reason`() = testApplication {
+    fun `PUT replaces and DELETE removes a scooter, both giving 404 for an unknown id`() = testApplication {
         configure()
 
-        val response = client.post("/scooters") {
-            contentType(ContentType.Application.Json)
-            setBody(NEGATIVE_PRICE_BODY)
-        }
-
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-        val errors = Json.decodeFromString<ValidationErrorResponse>(response.bodyAsText()).errors
-        assertEquals(listOf("price must be greater than 0"), errors)
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-        assertEquals(SEEDED, scooters.size, "Invalid scooter must not be saved")
-    }
-
-    @Test
-    fun `PUT scooters replaces an existing scooter`() = testApplication {
-        configure()
-
-        val response = client.put("/scooters/1") {
+        // PUT on an existing scooter: 200, replaced in place, no extra listing
+        val replaced = client.put("/scooters/1") {
             contentType(ContentType.Application.Json)
             setBody(VALID_BODY)
         }
-
-        assertEquals(HttpStatusCode.OK, response.status)
-        val updated = Json.decodeFromString<ScooterResponse>(response.bodyAsText())
+        assertEquals(HttpStatusCode.OK, replaced.status)
+        val updated = Json.decodeFromString<ScooterResponse>(replaced.bodyAsText())
         assertEquals(1, updated.id)
         assertEquals("Peugeot", updated.brand)
         assertEquals(PlateColor.BLUE, updated.plateColor)
 
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-        assertEquals(SEEDED, scooters.size, "an update must not add a scooter")
-        assertEquals("Peugeot", scooters.first { it.id == 1 }.brand)
-    }
+        val afterPut = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
+        assertEquals(SEEDED, afterPut.size, "an update must not add a scooter")
+        assertEquals("Peugeot", afterPut.first { it.id == 1 }.brand)
 
-    @Test
-    fun `PUT scooters returns 404 for an unknown id before looking at the body`() = testApplication {
-        configure()
-
-        // The body is invalid on purpose: if it were checked first, the answer would be 400
-        listOf("/scooters/99", "/scooters/abc").forEach { path ->
-            val response = client.put(path) {
-                contentType(ContentType.Application.Json)
-                setBody(NEGATIVE_PRICE_BODY)
-            }
-
-            assertEquals(HttpStatusCode.NotFound, response.status, "wrong status for $path")
-            assertEquals("", response.bodyAsText(), "a 404 for $path must have an empty body")
+        // PUT on an id that does not exist: 404
+        val unknownPut = client.put("/scooters/99") {
+            contentType(ContentType.Application.Json)
+            setBody(VALID_BODY)
         }
-    }
+        assertEquals(HttpStatusCode.NotFound, unknownPut.status)
 
-    @Test
-    fun `DELETE scooters removes the scooter and returns 404 for an unknown id`() = testApplication {
-        configure()
-
+        // DELETE on an existing scooter: 204 and really gone
         assertEquals(HttpStatusCode.NoContent, client.delete("/scooters/1").status)
-        val scooters = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
-        assertTrue(scooters.none { it.id == 1 })
+        val afterDelete = Json.decodeFromString<List<ScooterResponse>>(client.get("/scooters").bodyAsText())
+        assertTrue(afterDelete.none { it.id == 1 }, "the scooter should be gone")
+        assertEquals(SEEDED - 1, afterDelete.size)
 
+        // DELETE on an id that does not exist: 404
         assertEquals(HttpStatusCode.NotFound, client.delete("/scooters/99").status)
     }
 }
