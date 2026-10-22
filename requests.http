@@ -89,3 +89,54 @@ Content-Type: application/json
   "mileage": 2500,
   "maxSpeedKmh": 80
 }
+
+### Search cars on brand or model
+GET http://127.0.0.1:8080/cars?search=volkswagen
+
+### Filter cars on price and doors
+GET http://127.0.0.1:8080/cars?maxPrice=20000&doors=5
+
+### Get one car
+GET http://127.0.0.1:8080/cars/2
+
+### Get a car that does not exist (404)
+GET http://127.0.0.1:8080/cars/99
+
+### Create a car with wrong data (400 with errors)
+POST http://127.0.0.1:8080/cars
+Content-Type: application/json
+
+{
+  "brand": "",
+  "model": "A3",
+  "year": 1900,
+  "price": -1.0,
+  "mileage": -5,
+  "doors": 9
+}
+
+### Update a car (200)
+PUT http://127.0.0.1:8080/cars/2
+Content-Type: application/json
+
+{
+  "brand": "Toyota",
+  "model": "Yaris",
+  "year": 2020,
+  "price": 15500.0,
+  "mileage": 43000,
+  "doors": 5
+}
+
+### Update a car that does not exist (404)
+PUT http://127.0.0.1:8080/cars/99
+Content-Type: application/json
+
+{
+  "brand": "Toyota",
+  "model": "Yaris",
+  "year": 2020,
+  "price": 15500.0,
+  "mileage": 43000,
+  "doors": 5
+}
