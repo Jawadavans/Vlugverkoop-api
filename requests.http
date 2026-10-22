@@ -19,3 +19,73 @@ Content-Type: application/json
   "mileage": 60000,
   "doors": 5
 }
+
+### Get all scooters
+GET http://127.0.0.1:8080/scooters
+
+### Search and filter scooters
+GET http://127.0.0.1:8080/scooters?plateColor=BLUE&maxPrice=1500
+
+### Get the plate colours for the dropdown in the app
+GET http://127.0.0.1:8080/scooters/plate-colors
+
+### Get one scooter
+GET http://127.0.0.1:8080/scooters/1
+
+### Update scooter 1 (for example after a price change)
+PUT http://127.0.0.1:8080/scooters/1
+Content-Type: application/json
+
+{
+  "brand": "Vespa",
+  "model": "Primavera",
+  "year": 2021,
+  "price": 2395.0,
+  "mileage": 4600,
+  "maxSpeedKmh": 45
+}
+
+### Update a scooter that does not exist (gives 404 Not Found)
+PUT http://127.0.0.1:8080/scooters/99
+Content-Type: application/json
+
+{
+  "brand": "Vespa",
+  "model": "Primavera",
+  "year": 2021,
+  "price": 2395.0,
+  "mileage": 4600,
+  "maxSpeedKmh": 45
+}
+
+### Delete scooter with id 1
+DELETE http://127.0.0.1:8080/scooters/1
+
+### Delete a scooter that does not exist
+DELETE http://127.0.0.1:8080/scooters/99
+
+### Create a new scooter (45 km/h → yellow plate)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 45
+}
+
+### Create a scooter with an invalid speed (gives 400 Bad Request)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 80
+}
