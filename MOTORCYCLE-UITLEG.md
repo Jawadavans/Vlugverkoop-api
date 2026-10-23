@@ -9,7 +9,7 @@ Dit document legt in gewone taal uit wat er voor de **motor** in de VlugVerkoop-
 - Een motor heeft een **cilinderinhoud** (cc), een **vermogen** (kW), een **rijstijl** (naked, touring, sport, enduro, chopper) en een **rijbewijscategorie** (A1, A2 of A).
 - De server controleert of het rijbewijs past bij de motor: **A1** tot 125 cc en 11 kW, **A2** tot 35 kW, daarboven **A**.
 - De app kan motoren **ophalen, zoeken/filteren, plaatsen en verwijderen** via **`/motorcycles`**.
-- Er zijn **5 automatische tests** voor de motor. Ze slagen allemaal.
+- Er zijn **5 automatische tests** voor de motor: 3 unittests en 2 integratietests. Ze slagen allemaal.
 
 ---
 
@@ -118,15 +118,20 @@ De MT-07 en de Ninja 650 zijn de A2-versies, die zijn begrensd op 35 kW.
 
 ## De tests
 
-**`src/test/kotlin/MotorcycleRoutesTest.kt`** – integratietests (5), via de echte API, één per CRUD-stap:
+**`src/test/kotlin/MotorcycleTest.kt`** – unittests (3). Ze testen alleen de klasse `Motorcycle` en de rijbewijsregels, zonder server:
+
+| # | Test | Wat wordt gecontroleerd |
+|---|---|---|
+| 1 | `valid motorcycle has no validation errors` | Een goede motor geeft een lege foutenlijst (happy flow). |
+| 2 | `minimum licence is A1 up to 125 cc and 11 kW, A2 up to 35 kW and A above that` | De grenzen van `minimumFor`: 125 cc/11 kW is A1, 126 cc of 12 kW is A2, 35 kW is A2, 36 kW is A. |
+| 3 | `motorcycle with a licence that is too low is rejected` | A2 bij 689 cc en 54 kW geeft `licenseCategory A2 is not allowed for 689 cc and 54 kW`. |
+
+**`src/test/kotlin/MotorcycleRoutesTest.kt`** – integratietests (2), via de echte API. Samen dekken ze alle vier de CRUD-soorten:
 
 | # | Test | CRUD | Wat wordt gecontroleerd |
 |---|---|---|---|
-| 1 | `GET motorcycles returns all seeded motorcycles` | Read | `/motorcycles` geeft 200 en 6 motoren. |
-| 2 | `GET motorcycles by id returns that motorcycle and 404 for an unknown id` | Read | `/motorcycles/3` geeft de BMW, een onbekend id geeft 404. |
-| 3 | `POST motorcycles creates a motorcycle and rejects a wrong licence with 400` | Create | Een goede motor krijgt 201 en een nieuw id; A1 bij 373 cc wordt geweigerd met 400 en niet opgeslagen. |
-| 4 | `PUT motorcycles replaces a motorcycle, rejects a wrong licence and 404s an unknown id` | Update | De motor wordt vervangen; A2 bij 54 kW wordt geweigerd met 400 en niet opgeslagen; een onbekend id geeft 404. |
-| 5 | `DELETE motorcycles removes the motorcycle and returns 404 for an unknown id` | Delete | De motor is weg na verwijderen; een onbekend id geeft 404. |
+| 1 | `GET returns and filters motorcycles, and POST only stores valid ones` | Read + Create | `/motorcycles` geeft 200, JSON en 6 motoren; `/motorcycles/3` geeft de BMW en id 99 geeft 404; het filter `license=A2&maxPrice=6000` geeft de Honda en de Kawasaki; een goede motor krijgt 201 en id 7; A1 bij 373 cc wordt geweigerd met 400 en niet opgeslagen. |
+| 2 | `PUT replaces and DELETE removes a motorcycle, both giving 404 for an unknown id` | Update + Delete | PUT vervangt motor 1 zonder een extra motor toe te voegen; A2 bij 54 kW wordt geweigerd met 400 en niet opgeslagen; PUT op 99 geeft 404; DELETE geeft 204 en de motor is weg; DELETE op 99 geeft 404. |
 
 Uitvoeren:
 
