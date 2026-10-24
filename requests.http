@@ -128,6 +128,94 @@ Content-Type: application/json
   "doors": 5
 }
 
+### Get all motorcycles
+GET http://127.0.0.1:8080/motorcycles
+
+### Search motorcycles on brand or model
+GET http://127.0.0.1:8080/motorcycles?search=yamaha
+
+### Filter motorcycles on style, licence, engine size and price
+GET http://127.0.0.1:8080/motorcycles?style=NAKED&license=A2&minCc=300&maxCc=700&maxPrice=8000
+
+### Get the riding styles for the dropdown in the app
+GET http://127.0.0.1:8080/motorcycles/styles
+
+### Get one motorcycle
+GET http://127.0.0.1:8080/motorcycles/1
+
+### Get a motorcycle that does not exist (404)
+GET http://127.0.0.1:8080/motorcycles/99
+
+### Create a new motorcycle (201)
+POST http://127.0.0.1:8080/motorcycles
+Content-Type: application/json
+
+{
+  "brand": "Triumph",
+  "model": "Trident 660",
+  "year": 2022,
+  "price": 7950.0,
+  "mileage": 8200,
+  "engineCc": 660,
+  "powerKw": 35,
+  "style": "NAKED",
+  "licenseCategory": "A2"
+}
+
+### Create a motorcycle with a licence that is too low (400 with errors)
+POST http://127.0.0.1:8080/motorcycles
+Content-Type: application/json
+
+{
+  "brand": "BMW",
+  "model": "S 1000 RR",
+  "year": 2021,
+  "price": 18500.0,
+  "mileage": 9000,
+  "engineCc": 999,
+  "powerKw": 154,
+  "style": "SPORT",
+  "licenseCategory": "A1"
+}
+
+### Update motorcycle 1, for example after a price change (200)
+PUT http://127.0.0.1:8080/motorcycles/1
+Content-Type: application/json
+
+{
+  "brand": "Yamaha",
+  "model": "MT-07",
+  "year": 2019,
+  "price": 5950.0,
+  "mileage": 18200,
+  "engineCc": 689,
+  "powerKw": 35,
+  "style": "NAKED",
+  "licenseCategory": "A2"
+}
+
+### Update a motorcycle that does not exist (404)
+PUT http://127.0.0.1:8080/motorcycles/99
+Content-Type: application/json
+
+{
+  "brand": "Yamaha",
+  "model": "MT-07",
+  "year": 2019,
+  "price": 5950.0,
+  "mileage": 18200,
+  "engineCc": 689,
+  "powerKw": 35,
+  "style": "NAKED",
+  "licenseCategory": "A2"
+}
+
+### Delete motorcycle with id 1 (204)
+DELETE http://127.0.0.1:8080/motorcycles/1
+
+### Delete a motorcycle that does not exist (404)
+DELETE http://127.0.0.1:8080/motorcycles/99
+
 ### Update a car that does not exist (404)
 PUT http://127.0.0.1:8080/cars/99
 Content-Type: application/json
