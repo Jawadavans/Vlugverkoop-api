@@ -1167,7 +1167,6 @@ Ezelsbruggetje: **2xx = gelukt**, **4xx = fout van de gebruiker**, **5xx = fout 
 | **Eigen nummers** | Auto 1, motor 1 en scooter 1 hebben nu hetzelfde nummer. Met een database krijgt elk voertuig een eigen nummer. |
 | **Eén adres voor alle voertuigen** | Volgens het plan wordt het `GET /vehicles?type=CAR`. |
 | **Advertentiekosten** | Met het team bespreken of `calculateListingFee` blijft, omdat het brandbook "geen verborgen kosten" belooft. |
-| **Spelling** | In `Vehicle.kt` staat nog "Vlugverkoop" in plaats van "VlugVerkoop". |
 
 ---
 

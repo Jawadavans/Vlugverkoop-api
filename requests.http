@@ -1,13 +1,27 @@
+### ---------- CARS ----------
+
 ### Get all cars
 GET http://127.0.0.1:8080/cars
 
-### Delete car with id 1
-DELETE http://127.0.0.1:8080/cars/1
+### Search cars on brand or model
+GET http://127.0.0.1:8080/cars?search=volkswagen
 
-### Delete a car that does not exist
-DELETE http://127.0.0.1:8080/cars/99
+### Filter cars on price, mileage and doors
+GET http://127.0.0.1:8080/cars?maxPrice=20000&maxMileage=100000&doors=5
 
-### Create a new car
+### Filter cars with an invalid value (400 with errors)
+GET http://127.0.0.1:8080/cars?maxPrice=cheap
+
+### Get one car
+GET http://127.0.0.1:8080/cars/2
+
+### Get a car that does not exist (404)
+GET http://127.0.0.1:8080/cars/99
+
+### Get a car with an id that is not a number (400 with errors)
+GET http://127.0.0.1:8080/cars/abc
+
+### Create a new car (201)
 POST http://127.0.0.1:8080/cars
 Content-Type: application/json
 
@@ -19,88 +33,6 @@ Content-Type: application/json
   "mileage": 60000,
   "doors": 5
 }
-
-### Get all scooters
-GET http://127.0.0.1:8080/scooters
-
-### Search and filter scooters
-GET http://127.0.0.1:8080/scooters?plateColor=BLUE&maxPrice=1500
-
-### Get the plate colours for the dropdown in the app
-GET http://127.0.0.1:8080/scooters/plate-colors
-
-### Get one scooter
-GET http://127.0.0.1:8080/scooters/1
-
-### Update scooter 1 (for example after a price change)
-PUT http://127.0.0.1:8080/scooters/1
-Content-Type: application/json
-
-{
-  "brand": "Vespa",
-  "model": "Primavera",
-  "year": 2021,
-  "price": 2395.0,
-  "mileage": 4600,
-  "maxSpeedKmh": 45
-}
-
-### Update a scooter that does not exist (gives 404 Not Found)
-PUT http://127.0.0.1:8080/scooters/99
-Content-Type: application/json
-
-{
-  "brand": "Vespa",
-  "model": "Primavera",
-  "year": 2021,
-  "price": 2395.0,
-  "mileage": 4600,
-  "maxSpeedKmh": 45
-}
-
-### Delete scooter with id 1
-DELETE http://127.0.0.1:8080/scooters/1
-
-### Delete a scooter that does not exist
-DELETE http://127.0.0.1:8080/scooters/99
-
-### Create a new scooter (45 km/h → yellow plate)
-POST http://127.0.0.1:8080/scooters
-Content-Type: application/json
-
-{
-  "brand": "Peugeot",
-  "model": "Kisbee",
-  "year": 2022,
-  "price": 1750.0,
-  "mileage": 2500,
-  "maxSpeedKmh": 45
-}
-
-### Create a scooter with an invalid speed (gives 400 Bad Request)
-POST http://127.0.0.1:8080/scooters
-Content-Type: application/json
-
-{
-  "brand": "Peugeot",
-  "model": "Kisbee",
-  "year": 2022,
-  "price": 1750.0,
-  "mileage": 2500,
-  "maxSpeedKmh": 80
-}
-
-### Search cars on brand or model
-GET http://127.0.0.1:8080/cars?search=volkswagen
-
-### Filter cars on price and doors
-GET http://127.0.0.1:8080/cars?maxPrice=20000&doors=5
-
-### Get one car
-GET http://127.0.0.1:8080/cars/2
-
-### Get a car that does not exist (404)
-GET http://127.0.0.1:8080/cars/99
 
 ### Create a car with wrong data (400 with errors)
 POST http://127.0.0.1:8080/cars
@@ -115,7 +47,7 @@ Content-Type: application/json
   "doors": 9
 }
 
-### Update a car (200)
+### Update car 2, for example after a price change (200)
 PUT http://127.0.0.1:8080/cars/2
 Content-Type: application/json
 
@@ -128,14 +60,122 @@ Content-Type: application/json
   "doors": 5
 }
 
+### Update a car that does not exist (404)
+PUT http://127.0.0.1:8080/cars/99
+Content-Type: application/json
+
+{
+  "brand": "Toyota",
+  "model": "Yaris",
+  "year": 2020,
+  "price": 15500.0,
+  "mileage": 43000,
+  "doors": 5
+}
+
+### Delete car with id 1 (204)
+DELETE http://127.0.0.1:8080/cars/1
+
+### Delete a car that does not exist (404)
+DELETE http://127.0.0.1:8080/cars/99
+
+### ---------- SCOOTERS ----------
+
+### Get all scooters
+GET http://127.0.0.1:8080/scooters
+
+### Search scooters on brand or model
+GET http://127.0.0.1:8080/scooters?search=vespa
+
+### Filter scooters on plate colour, price and mileage
+GET http://127.0.0.1:8080/scooters?plateColor=BLUE&maxPrice=1500&maxMileage=10000
+
+### Filter scooters with an invalid value (400 with errors)
+GET http://127.0.0.1:8080/scooters?plateColor=RED
+
+### Get the plate colours for the dropdown in the app
+GET http://127.0.0.1:8080/scooters/plate-colors
+
+### Get one scooter
+GET http://127.0.0.1:8080/scooters/1
+
+### Get a scooter that does not exist (404)
+GET http://127.0.0.1:8080/scooters/99
+
+### Get a scooter with an id that is not a number (400 with errors)
+GET http://127.0.0.1:8080/scooters/abc
+
+### Create a new scooter, 45 km/h gives a yellow plate (201)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 45
+}
+
+### Create a scooter with an invalid speed (400 with errors)
+POST http://127.0.0.1:8080/scooters
+Content-Type: application/json
+
+{
+  "brand": "Peugeot",
+  "model": "Kisbee",
+  "year": 2022,
+  "price": 1750.0,
+  "mileage": 2500,
+  "maxSpeedKmh": 80
+}
+
+### Update scooter 1, for example after a price change (200)
+PUT http://127.0.0.1:8080/scooters/1
+Content-Type: application/json
+
+{
+  "brand": "Vespa",
+  "model": "Primavera",
+  "year": 2021,
+  "price": 2395.0,
+  "mileage": 4600,
+  "maxSpeedKmh": 45
+}
+
+### Update a scooter that does not exist (404)
+PUT http://127.0.0.1:8080/scooters/99
+Content-Type: application/json
+
+{
+  "brand": "Vespa",
+  "model": "Primavera",
+  "year": 2021,
+  "price": 2395.0,
+  "mileage": 4600,
+  "maxSpeedKmh": 45
+}
+
+### Delete scooter with id 1 (204)
+DELETE http://127.0.0.1:8080/scooters/1
+
+### Delete a scooter that does not exist (404)
+DELETE http://127.0.0.1:8080/scooters/99
+
+### ---------- MOTORCYCLES ----------
+
 ### Get all motorcycles
 GET http://127.0.0.1:8080/motorcycles
 
 ### Search motorcycles on brand or model
 GET http://127.0.0.1:8080/motorcycles?search=yamaha
 
-### Filter motorcycles on style, licence, engine size and price
-GET http://127.0.0.1:8080/motorcycles?style=NAKED&license=A2&minCc=300&maxCc=700&maxPrice=8000
+### Filter motorcycles on style, licence, engine size, price and mileage
+GET http://127.0.0.1:8080/motorcycles?style=NAKED&license=A2&minCc=300&maxCc=700&maxPrice=8000&maxMileage=20000
+
+### Filter motorcycles with an invalid value (400 with errors)
+GET http://127.0.0.1:8080/motorcycles?license=B
 
 ### Get the riding styles for the dropdown in the app
 GET http://127.0.0.1:8080/motorcycles/styles
@@ -145,6 +185,9 @@ GET http://127.0.0.1:8080/motorcycles/1
 
 ### Get a motorcycle that does not exist (404)
 GET http://127.0.0.1:8080/motorcycles/99
+
+### Get a motorcycle with an id that is not a number (400 with errors)
+GET http://127.0.0.1:8080/motorcycles/abc
 
 ### Create a new motorcycle (201)
 POST http://127.0.0.1:8080/motorcycles
@@ -176,6 +219,22 @@ Content-Type: application/json
   "powerKw": 154,
   "style": "SPORT",
   "licenseCategory": "A1"
+}
+
+### Create a motorcycle with a licence that is too high (400 with errors)
+POST http://127.0.0.1:8080/motorcycles
+Content-Type: application/json
+
+{
+  "brand": "Honda",
+  "model": "CB125R",
+  "year": 2021,
+  "price": 3950.0,
+  "mileage": 6400,
+  "engineCc": 125,
+  "powerKw": 11,
+  "style": "NAKED",
+  "licenseCategory": "A"
 }
 
 ### Update motorcycle 1, for example after a price change (200)
@@ -215,16 +274,3 @@ DELETE http://127.0.0.1:8080/motorcycles/1
 
 ### Delete a motorcycle that does not exist (404)
 DELETE http://127.0.0.1:8080/motorcycles/99
-
-### Update a car that does not exist (404)
-PUT http://127.0.0.1:8080/cars/99
-Content-Type: application/json
-
-{
-  "brand": "Toyota",
-  "model": "Yaris",
-  "year": 2020,
-  "price": 15500.0,
-  "mileage": 43000,
-  "doors": 5
-}

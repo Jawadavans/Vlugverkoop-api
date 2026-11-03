@@ -1,8 +1,6 @@
 package nl.vlugverkoop.routes
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.plugins.BadRequestException
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -18,36 +16,38 @@ import nl.vlugverkoop.model.PlateColor
 import nl.vlugverkoop.model.Scooter
 import nl.vlugverkoop.repository.ScooterRepository
 
-/**
- * Builds a scooter from this request and collects every problem with it.
- *
- * The scooter is null when the speed class makes a scooter impossible to build at all;
- * in that case the message from the constructor is the only error.
- */
-private fun CreateScooterRequest.validated(id: Int): Pair<Scooter?, List<String>> {
-    val scooter = try {
-        toScooter(id)
-    } catch (e: IllegalArgumentException) {
-        return null to listOf(e.message ?: "invalid scooter data")
-    }
-    return scooter to scooter.validate()
-}
+private const val INVALID_BODY = "request body must be valid scooter JSON"
+private const val SCOOTER_NOT_FOUND = "Scooter not found"
 
 /**
  * All endpoints for scooters.
+ *
+ * Error handling:
+ * - 404 Not Found: the scooter does not exist (body is a [ValidationErrorResponse]).
+ * - 400 Bad Request: the data in the request is not correct (body is a [ValidationErrorResponse]).
  */
 fun Route.scooterRoutes(repository: ScooterRepository) {
     route("/scooters") {
 
-        // GET /scooters → all scooters as JSON, optionally filtered
+        // GET /scooters → all scooters, optionally filtered
         // Example: /scooters?search=vespa&plateColor=YELLOW&maxPrice=3000&maxMileage=5000
         get {
             val query = call.request.queryParameters
+            val errors = mutableListOf<String>()
+            val plateColor = query.enumOrError<PlateColor>("plateColor", errors)
+            val maxPrice = query.doubleOrError("maxPrice", errors)
+            val maxMileage = query.intOrError("maxMileage", errors)
+
+            if (errors.isNotEmpty()) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(errors))
+                return@get
+            }
+
             val scooters = repository.find(
                 search = query["search"],
-                plateColor = PlateColor.entries.find { it.name.equals(query["plateColor"], ignoreCase = true) },
-                maxPrice = query["maxPrice"]?.toDoubleOrNull(),
-                maxMileage = query["maxMileage"]?.toIntOrNull()
+                plateColor = plateColor,
+                maxPrice = maxPrice,
+                maxMileage = maxMileage
             )
             call.respond(scooters.map { it.toResponse() })
         }
@@ -57,22 +57,27 @@ fun Route.scooterRoutes(repository: ScooterRepository) {
             call.respond(PlateColor.entries.toList())
         }
 
-        // GET /scooters/{id} → one scooter, or 404 when it does not exist
+        // GET /scooters/{id} → one scooter
         get("/{id}") {
-            val scooter = call.parameters["id"]?.toIntOrNull()?.let { repository.getById(it) }
-            if (scooter == null) {
-                call.respond(HttpStatusCode.NotFound)
-            } else {
-                call.respond(scooter.toResponse())
+            val id = call.parameters["id"]?.toIntOrNull()
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf(INVALID_ID)))
+                return@get
             }
+
+            val scooter = repository.getById(id)
+            if (scooter == null) {
+                call.respond(HttpStatusCode.NotFound, ValidationErrorResponse(listOf(SCOOTER_NOT_FOUND)))
+                return@get
+            }
+            call.respond(scooter.toResponse())
         }
 
-        // POST /scooters → places a new listing, or 400 with the reasons when the data is invalid
+        // POST /scooters → places a new listing
         post {
-            val request = try {
-                call.receive<CreateScooterRequest>()
-            } catch (e: BadRequestException) {
-                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf("invalid scooter data")))
+            val request = call.receiveOrNull<CreateScooterRequest>()
+            if (request == null) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf(INVALID_BODY)))
                 return@post
             }
 
@@ -86,19 +91,22 @@ fun Route.scooterRoutes(repository: ScooterRepository) {
             call.respond(HttpStatusCode.Created, scooter.toResponse())
         }
 
-        // PUT /scooters/{id} → replaces an existing listing, for example after a price change,
-        // or 404 when it does not exist
+        // PUT /scooters/{id} → replaces an existing listing, for example after a price change
         put("/{id}") {
             val id = call.parameters["id"]?.toIntOrNull()
-            if (id == null || repository.getById(id) == null) {
-                call.respond(HttpStatusCode.NotFound)
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf(INVALID_ID)))
                 return@put
             }
 
-            val request = try {
-                call.receive<CreateScooterRequest>()
-            } catch (e: BadRequestException) {
-                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf("invalid scooter data")))
+            if (repository.getById(id) == null) {
+                call.respond(HttpStatusCode.NotFound, ValidationErrorResponse(listOf(SCOOTER_NOT_FOUND)))
+                return@put
+            }
+
+            val request = call.receiveOrNull<CreateScooterRequest>()
+            if (request == null) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf(INVALID_BODY)))
                 return@put
             }
 
@@ -109,16 +117,40 @@ fun Route.scooterRoutes(repository: ScooterRepository) {
             }
 
             if (repository.update(scooter)) {
-                call.respond(HttpStatusCode.OK, scooter.toResponse())
+                call.respond(scooter.toResponse())
             } else {
-                call.respond(HttpStatusCode.NotFound)
+                call.respond(HttpStatusCode.NotFound, ValidationErrorResponse(listOf(SCOOTER_NOT_FOUND)))
             }
         }
 
-        // DELETE /scooters/{id} → removes a listing, or 404 when it does not exist
+        // DELETE /scooters/{id} → removes a listing
         delete("/{id}") {
-            val deleted = call.parameters["id"]?.toIntOrNull()?.let { repository.delete(it) } ?: false
-            call.respond(if (deleted) HttpStatusCode.NoContent else HttpStatusCode.NotFound)
+            val id = call.parameters["id"]?.toIntOrNull()
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, ValidationErrorResponse(listOf(INVALID_ID)))
+                return@delete
+            }
+
+            if (repository.delete(id)) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                call.respond(HttpStatusCode.NotFound, ValidationErrorResponse(listOf(SCOOTER_NOT_FOUND)))
+            }
         }
     }
+}
+
+/**
+ * Builds a scooter from this request and collects every problem with it.
+ *
+ * The scooter is null when the speed class makes a scooter impossible to build at all;
+ * in that case the message from the constructor is the only error.
+ */
+private fun CreateScooterRequest.validated(id: Int): Pair<Scooter?, List<String>> {
+    val scooter = try {
+        toScooter(id)
+    } catch (e: IllegalArgumentException) {
+        return null to listOf(e.message ?: "invalid scooter data")
+    }
+    return scooter to scooter.validate()
 }

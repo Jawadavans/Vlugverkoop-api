@@ -5,6 +5,7 @@ import nl.vlugverkoop.model.Scooter
 
 /**
  * Data the Android app sends to create or update a scooter listing.
+ * It has no id: the server decides the id.
  * The plate colour is not sent: the scooter derives it from [maxSpeedKmh].
  */
 @Serializable

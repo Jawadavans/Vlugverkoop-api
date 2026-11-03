@@ -28,8 +28,9 @@ class MotorcycleRoutesTest {
         /** How many motorcycles the repository starts with. */
         const val SEEDED = 6
 
+        /** The spaces around the brand check that the server removes them. */
         const val VALID_BODY = """
-            {"brand":"Triumph","model":"Trident 660","year":2022,"price":7250.0,"mileage":3000,
+            {"brand":" Triumph ","model":"Trident 660","year":2022,"price":7250.0,"mileage":3000,
              "engineCc":660,"powerKw":35,"style":"NAKED","licenseCategory":"A2"}
         """
 
@@ -60,16 +61,33 @@ class MotorcycleRoutesTest {
         assertEquals(15900.0, bmw.price)
         assertEquals(4.95, bmw.listingFee)
 
-        // GET by id: that motorcycle, or 404 for an id that does not exist
+        // GET by id: that motorcycle, 404 for an id that does not exist, 400 for an id that is not a number
         val byId = Json.decodeFromString<MotorcycleResponse>(client.get("/motorcycles/3").bodyAsText())
         assertEquals("BMW", byId.brand)
-        assertEquals(HttpStatusCode.NotFound, client.get("/motorcycles/99").status)
+        val unknown = client.get("/motorcycles/99")
+        assertEquals(HttpStatusCode.NotFound, unknown.status)
+        assertEquals(
+            listOf("Motorcycle not found"),
+            Json.decodeFromString<ValidationErrorResponse>(unknown.bodyAsText()).errors
+        )
+        assertEquals(HttpStatusCode.BadRequest, client.get("/motorcycles/abc").status)
 
         // GET with filters: everything an A2 rider may ride (A1 and A2) up to 6000 euro
         val filtered = Json.decodeFromString<List<MotorcycleResponse>>(
             client.get("/motorcycles?license=A2&maxPrice=6000").bodyAsText()
         )
         assertEquals(listOf(2, 4), filtered.map { it.id })
+
+        // GET with filters that are not valid: 400 with every reason
+        val badFilter = client.get("/motorcycles?license=B&maxPrice=cheap")
+        assertEquals(HttpStatusCode.BadRequest, badFilter.status)
+        assertEquals(
+            listOf("license must be one of [A1, A2, A]", "maxPrice must be a number"),
+            Json.decodeFromString<ValidationErrorResponse>(badFilter.bodyAsText()).errors
+        )
+
+        // POST without a JSON body: 400, not a server error
+        assertEquals(HttpStatusCode.BadRequest, client.post("/motorcycles").status)
 
         // POST with valid data: 201 and a new id
         val created = client.post("/motorcycles") {
@@ -80,6 +98,7 @@ class MotorcycleRoutesTest {
         val newMotorcycle = Json.decodeFromString<MotorcycleResponse>(created.bodyAsText())
         assertEquals(SEEDED + 1, newMotorcycle.id)
         assertEquals("Triumph", newMotorcycle.brand)
+        assertEquals(4.95, newMotorcycle.listingFee)
 
         // POST with a licence that is too low: 400 with the reason, and nothing is stored
         val rejected = client.post("/motorcycles") {
@@ -108,6 +127,7 @@ class MotorcycleRoutesTest {
         val updated = Json.decodeFromString<MotorcycleResponse>(replaced.bodyAsText())
         assertEquals(1, updated.id)
         assertEquals("Triumph", updated.brand)
+        assertEquals(4.95, updated.listingFee)
 
         val afterPut = Json.decodeFromString<List<MotorcycleResponse>>(client.get("/motorcycles").bodyAsText())
         assertEquals(SEEDED, afterPut.size, "an update must not add a motorcycle")
@@ -140,5 +160,50 @@ class MotorcycleRoutesTest {
 
         // DELETE on an id that does not exist: 404
         assertEquals(HttpStatusCode.NotFound, client.delete("/motorcycles/99").status)
+
+        // DELETE on an id that is not a number: 400
+        assertEquals(HttpStatusCode.BadRequest, client.delete("/motorcycles/abc").status)
+    }
+
+    @Test
+    fun `every filter works on its own and combined, and invalid filters give 400`() = testApplication {
+        configure()
+
+        suspend fun ids(query: String) =
+            Json.decodeFromString<List<MotorcycleResponse>>(client.get("/motorcycles?$query").bodyAsText()).map { it.id }
+
+        // Search: on brand, model or both, not case sensitive; empty search is ignored
+        assertEquals(listOf(4), ids("search=NINJA"))
+        assertEquals(listOf(4), ids("search=kawasaki%20ninja"))
+        assertEquals(SEEDED, ids("search=%20").size)
+        assertEquals(emptyList(), ids("search=ducati"))
+
+        // Choice filters, not case sensitive: a licence also allows every lower category
+        assertEquals(listOf(1, 2), ids("style=naked"))
+        assertEquals(listOf(2), ids("license=A1"))
+        assertEquals(SEEDED, ids("license=a").size)
+
+        // Limits include the value itself
+        assertEquals(listOf(3, 6), ids("minCc=1254"))
+        assertEquals(listOf(2), ids("maxCc=125"))
+        assertEquals(listOf(2), ids("maxPrice=3950"))
+        assertEquals(listOf(2), ids("maxMileage=6400"))
+
+        // Combined: a motorcycle must pass every filter
+        assertEquals(listOf(1), ids("style=NAKED&license=A2&minCc=300&maxCc=700&maxPrice=8000&maxMileage=20000"))
+
+        // The riding styles for the dropdown
+        assertEquals(
+            """["NAKED","TOURING","SPORT","ENDURO","CHOPPER"]""",
+            client.get("/motorcycles/styles").bodyAsText()
+        )
+
+        // Invalid values: 400 with every reason
+        val rejected = client.get("/motorcycles?style=CRUISER&minCc=small")
+        assertEquals(HttpStatusCode.BadRequest, rejected.status)
+        assertEquals(
+            listOf("style must be one of [NAKED, TOURING, SPORT, ENDURO, CHOPPER]", "minCc must be a whole number"),
+            Json.decodeFromString<ValidationErrorResponse>(rejected.bodyAsText()).errors
+        )
     }
 }

@@ -22,13 +22,18 @@ class MotorcycleRepository {
     )
 
     /** Returns all motorcycles. */
-    fun getAll(): List<Motorcycle> = motorcycles
+    fun getAll(): List<Motorcycle> = motorcycles.toList()
 
     /**
      * Returns the motorcycles that pass every filter. A filter that is null is skipped.
      *
      * @param search text that must appear in the brand or model, e.g. "yamaha".
+     * @param style only motorcycles with this riding style.
      * @param license the buyer's licence; returns every motorcycle the buyer is allowed to ride.
+     * @param minCc smallest engine size the buyer wants.
+     * @param maxCc largest engine size the buyer wants.
+     * @param maxPrice highest price the buyer wants to pay.
+     * @param maxMileage highest mileage the buyer accepts.
      */
     fun find(
         search: String? = null,
@@ -36,26 +41,28 @@ class MotorcycleRepository {
         license: LicenseCategory? = null,
         minCc: Int? = null,
         maxCc: Int? = null,
-        maxPrice: Double? = null
+        maxPrice: Double? = null,
+        maxMileage: Int? = null
     ): List<Motorcycle> = motorcycles.filter {
         (search.isNullOrBlank() || "${it.brand} ${it.model}".contains(search.trim(), ignoreCase = true)) &&
             (style == null || it.style == style) &&
             (license == null || it.licenseCategory <= license) &&
             (minCc == null || it.engineCc >= minCc) &&
             (maxCc == null || it.engineCc <= maxCc) &&
-            (maxPrice == null || it.price <= maxPrice)
+            (maxPrice == null || it.price <= maxPrice) &&
+            (maxMileage == null || it.mileage <= maxMileage)
     }
 
     /** Returns the motorcycle with this [id], or null when it does not exist. */
     fun getById(id: Int): Motorcycle? = motorcycles.find { it.id == id }
 
+    /** Returns the id the next new motorcycle should get. */
+    fun nextId(): Int = (motorcycles.maxOfOrNull { it.id } ?: 0) + 1
+
     /** Stores a new motorcycle. */
     fun add(motorcycle: Motorcycle) {
         motorcycles.add(motorcycle)
     }
-
-    /** Returns the id the next new motorcycle should get. */
-    fun nextId(): Int = (motorcycles.maxOfOrNull { it.id } ?: 0) + 1
 
     /**
      * Replaces the stored motorcycle that has the same id as [motorcycle].

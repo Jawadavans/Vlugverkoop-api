@@ -18,7 +18,7 @@ class ScooterRepository {
     )
 
     /** Returns all scooters. */
-    fun getAll(): List<Scooter> = scooters
+    fun getAll(): List<Scooter> = scooters.toList()
 
     /**
      * Returns the scooters that pass every filter. A filter that is null is skipped.

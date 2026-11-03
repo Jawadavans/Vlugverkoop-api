@@ -8,8 +8,9 @@ Dit document legt in gewone taal uit wat er voor de **auto** in de VlugVerkoop-A
 
 - Een auto heeft naast de gewone voertuiggegevens een **aantal deuren** (2 tot en met 7).
 - De server controleert de gegevens van een auto met `validate()` voordat hij wordt opgeslagen.
+- Een auto-advertentie kost **€ 9,95** (`listingFee`). De server bepaalt dit bedrag.
 - De app kan auto's **ophalen, zoeken/filteren, plaatsen, wijzigen en verwijderen** via **`/cars`**.
-- Er zijn **5 automatische tests** voor de auto: 3 unittests en 2 integratietesten. Ze slagen allemaal.
+- Er zijn **7 automatische tests** voor de auto: 4 unittests en 3 integratietesten. Ze slagen allemaal.
 
 ---
 
@@ -71,7 +72,7 @@ Het huidige jaar wordt opgehaald met `Year.now()`, zodat de code volgend jaar ni
 | `DELETE /cars/{id}` | Advertentie verwijderen | 204, of 404 als hij niet bestaat |
 
 **Foutafhandeling, gelijk aan motor en scooter:**
-- **404** betekent: de auto bestaat niet.
+- **404** betekent: de auto bestaat niet (`{"errors":["Car not found"]}`).
 - **400** betekent: de gegevens kloppen niet (foute waarden, kapotte JSON, of een id of filter dat geen getal is).
 
 `search` zoekt in merk **en** model, en hoofdletters maken niet uit. Voorbeeld: `/cars?search=volkswagen&maxPrice=15000` geeft alleen de Golf.
@@ -89,11 +90,29 @@ Het huidige jaar wordt opgehaald met `Year.now()`, zodat de code volgend jaar ni
 }
 ```
 
+De server antwoordt met 201 en vult zelf `id` en `listingFee` in:
+
+```json
+{ "id": 7, "brand": "Audi", "model": "A3", "year": 2019, "price": 17500.0, "mileage": 60000, "doors": 5, "listingFee": 9.95 }
+```
+
 Met `"price": -1.0` en `"doors": 9` krijg je:
 
 ```json
 { "errors": ["price must be greater than 0", "doors must be between 2 and 7"] }
 ```
+
+---
+
+## Advertentiekosten
+
+De verkoper betaalt per advertentie vaste kosten. De server bepaalt het bedrag en stuurt het in elk antwoord mee als `listingFee`. De app kan het niet zelf opgeven.
+
+| Voertuig | `listingFee` |
+|---|---|
+| Auto | € 9,95 |
+| Motor | € 4,95 |
+| Scooter | € 2,95 |
 
 ---
 
@@ -114,20 +133,22 @@ Twee Volkswagens, zodat zoeken op merk meer dan één resultaat geeft.
 
 ## De tests
 
-**`src/test/kotlin/CarTest.kt`** – unittests (3). Ze testen alleen de klasse `Car`, zonder server:
+**`src/test/kotlin/CarTest.kt`** – unittests (4). Ze testen alleen de klasse `Car`, zonder server:
 
 | # | Test | Wat wordt gecontroleerd |
 |---|---|---|
 | 1 | `valid car has no validation errors` | Een goede auto geeft een lege foutenlijst (happy flow). |
 | 2 | `car with a price of zero is rejected` | Prijs 0 geeft `price must be greater than 0`. |
 | 3 | `car with too few or too many doors is rejected` | 1 en 8 deuren geven allebei `doors must be between 2 and 7`. |
+| 4 | `brand, model, mileage, year and doors rules hold at their limits` | Lege merk- en modelnaam, negatieve km-stand en de grenzen van bouwjaar en deuren. |
 
-**`src/test/kotlin/CarRoutesTest.kt`** – integratietesten (2), via de echte API. Samen dekken ze alle vier de CRUD-soorten:
+**`src/test/kotlin/CarRoutesTest.kt`** – integratietesten (3), via de echte API. Samen dekken ze alle vier de CRUD-soorten:
 
 | # | Test | CRUD | Wat wordt gecontroleerd |
 |---|---|---|---|
 | 1 | `GET returns and filters cars, and POST only stores valid ones` | Read + Create | `/cars` geeft 200, JSON en 6 auto's; het filter geeft alleen de Golf; een goede auto krijgt 201 en id 7; een foute auto krijgt 400 met beide foutmeldingen en wordt niet opgeslagen. |
 | 2 | `PUT replaces and DELETE removes a car, both giving 404 for an unknown id` | Update + Delete | PUT vervangt auto 1 zonder een extra auto toe te voegen; PUT op 99 geeft 404; DELETE geeft 204 en de auto is weg; DELETE op 99 geeft 404. |
+| 3 | `every filter works on its own and combined, and invalid filters give 400` | Read | Elk filter apart en samen, inclusief de grenswaarden; een ongeldig filter geeft 400 met alle redenen. |
 
 Uitvoeren:
 
@@ -155,12 +176,13 @@ Gebruik `http://127.0.0.1:8080` in plaats van `localhost`.
 | Probleem | Oorzaak | Oplossing |
 |---|---|---|
 | Merge-conflicten na het ophalen van de code van het team | Er was lokaal gewerkt zonder eerst te pullen | Voor de scooterbestanden en `Routing.kt` de versie van GitHub gekozen (**Accept Right**), daarna het eigen werk opnieuw toegevoegd. Volgende keer: eerst **Git → Pull**, dan pas beginnen. |
-| Kapotte JSON gaf een 500 (serverfout) | `StatusPages.kt` maakt van elke niet-opgevangen fout een 500 | `receiveCarRequestOrNull()` vangt de fout op en geeft 400 terug. |
+| Kapotte JSON gaf een 500 (serverfout) | `StatusPages.kt` maakt van elke niet-opgevangen fout een 500 | `receiveOrNull()` in `RouteHelpers.kt` vangt de fout op en geeft 400 terug. |
 
 ---
 
 ## Nog te doen / overleggen met het team
 
+- **Advertentiekosten (`listingFee`).** Betalingen vallen volgens het plan buiten de scope, en het brandbook belooft "geen verborgen kosten". Bespreek of deze kosten eruit moeten.
 - **Opslag.** Auto's staan nu in het geheugen. Na een herstart zijn nieuwe advertenties weg.
 - **Eén adres voor alle voertuigen.** Volgens het plan van aanpak wordt het uiteindelijk `GET /vehicles?type=CAR`.
 - **Dezelfde nummers.** Auto 1, motor 1 en scooter 1 hebben hetzelfde nummer. Met een echte database moet elk voertuig een eigen nummer krijgen.

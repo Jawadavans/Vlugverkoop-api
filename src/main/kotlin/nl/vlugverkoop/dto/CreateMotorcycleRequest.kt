@@ -6,7 +6,7 @@ import nl.vlugverkoop.model.Motorcycle
 import nl.vlugverkoop.model.MotorcycleStyle
 
 /**
- * Data the Android app sends to create a new motorcycle.
+ * Data the Android app sends to create or update a motorcycle listing.
  * It has no id: the server decides the id.
  */
 @Serializable
@@ -22,11 +22,11 @@ data class CreateMotorcycleRequest(
     val licenseCategory: LicenseCategory
 )
 
-/** Converts the request into a Motorcycle with the given [id]. */
+/** Builds a motorcycle with the given [id] from this request. */
 fun CreateMotorcycleRequest.toMotorcycle(id: Int): Motorcycle = Motorcycle(
     id = id,
-    brand = brand,
-    model = model,
+    brand = brand.trim(),
+    model = model.trim(),
     year = year,
     price = price,
     mileage = mileage,

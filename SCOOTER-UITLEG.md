@@ -8,7 +8,8 @@ Dit document legt in gewone taal uit wat er voor de **scooter** in de VlugVerkoo
 
 - Een scooter heeft nu een **snelheid** (25 of 45 km/u) en een **kentekenkleur** (blauw of geel), zoals het plan van aanpak vraagt.
 - Via het adres **`/scooters`** kan de app scooters **ophalen**, **plaatsen** en **verwijderen**, net als bij auto's.
-- Er zijn **6 automatische tests** die controleren of dat goed werkt. Ze slagen alle zes.
+- Een scooter-advertentie kost **€ 2,95** (`listingFee`). De server bepaalt dit bedrag.
+- Er zijn **7 automatische tests** voor de scooter: 4 unittests en 3 integratietests. Ze slagen allemaal.
 
 ### Scooter naast auto
 
@@ -88,7 +89,7 @@ Een `enum` is een **vaste keuzelijst**, net als een uitklapmenu met maar twee op
 
 ### 2. `repository/ScooterRepository.kt` – het magazijn
 
-Hier staan voorlopig 3 voorbeeldscooters. Later komt er een echte database voor in de plaats.
+Hier staan voorlopig 6 voorbeeldscooters. Later komt er een echte database voor in de plaats.
 
 Het magazijn kan:
 - **alle scooters geven** (`getAll`)
@@ -165,24 +166,28 @@ Zo ziet het antwoord van `/scooters` eruit (eerste scooter):
 
 ## De tests
 
-De tests staan in **`src/test/kotlin/ScooterRoutesTest.kt`**.
+**`src/test/kotlin/ScooterTest.kt`** – unittests (4). Ze testen alleen de klasse `Scooter`, zonder server:
 
-Een test is een stukje code dat de app nadoet: hij gebruikt `/scooters` en controleert of het antwoord klopt. De server hoeft daarvoor niet aan te staan. Elke test begint met een vers magazijn met de 3 voorbeeldscooters. In het plan van aanpak heten dit **integratietesten met Ktor testApplication**.
-
-| # | Naam van de test | Wat wordt gecontroleerd |
+| # | Test | Wat wordt gecontroleerd |
 |---|---|---|
-| 1 | `GET scooters returns 200 with JSON` | De server antwoordt met "OK" (code 200) en stuurt JSON terug. |
-| 2 | `GET scooters returns all scooters with their details` | Er komen 3 scooters terug, en de Vespa heeft het juiste merk, model, de juiste prijs en snelheid. |
-| 3 | `GET scooters gives blue plate for 25 kmh and yellow plate for 45 kmh` | 25 km/u geeft een blauw kenteken en 45 km/u een geel kenteken. |
-| 4 | `POST scooters creates a scooter with the right plate colour` | Een nieuwe scooter van 25 km/u plaatsen geeft code 201, nummer 4 en een blauw kenteken. |
-| 5 | `POST scooters with a speed other than 25 or 45 returns 400` | Een scooter van 80 km/u wordt geweigerd (code 400) en wordt **niet** opgeslagen. |
-| 6 | `DELETE scooters removes the scooter and returns 404 for an unknown id` | Scooter 1 verwijderen lukt (code 204) en hij is echt weg. Scooter 99 bestaat niet en geeft code 404. |
+| 1 | `25 kmh gives a blue plate and 45 kmh gives a yellow plate` | De kentekenkleur hoort bij de snelheid. |
+| 2 | `a speed class other than 25 or 45 cannot be built at all` | 80 km/u geeft `maxSpeedKmh must be one of [25, 45], was 80`. |
+| 3 | `a negative price and a negative mileage are both reported` | Beide fouten komen tegelijk terug. |
+| 4 | `brand, model, mileage, year and price rules hold at their limits` | Lege merk- en modelnaam, negatieve km-stand en de grenzen van bouwjaar en maximumprijs. |
 
-**Resultaat:** 6 van 6 geslaagd, 0 fouten.
+**`src/test/kotlin/ScooterRoutesTest.kt`** – integratietests (3), via de echte API. Samen dekken ze alle vier de CRUD-soorten:
 
-Moet je per persoon 3 endpoint-tests inleveren? Een goede keuze is test 1, 4 en 6. Dan heb je elk endpoint (GET, POST en DELETE) één keer getest.
+| # | Test | CRUD | Wat wordt gecontroleerd |
+|---|---|---|---|
+| 1 | `GET returns and filters scooters, and POST only stores valid ones` | Read + Create | `/scooters` geeft 200, JSON en 6 scooters; id 99 geeft 404 en `abc` geeft 400; een goede scooter krijgt 201 en id 7; 80 km/u wordt geweigerd en niet opgeslagen. |
+| 2 | `PUT replaces and DELETE removes a scooter, both giving 404 for an unknown id` | Update + Delete | PUT vervangt scooter 1 zonder een extra scooter toe te voegen; 80 km/u wordt geweigerd; PUT op 99 geeft 404; DELETE geeft 204 en de scooter is weg; DELETE op 99 geeft 404. |
+| 3 | `every filter works on its own and combined, and invalid filters give 400` | Read | Elk filter apart en samen, inclusief de grenswaarden; de kentekenkleuren voor het uitklapmenu; een ongeldig filter geeft 400 met alle redenen. |
 
-Er bestaat ook nog een oudere test, `ServerTest.kt`. Die controleert alleen of de server opstart (adres `/`).
+Uitvoeren:
+
+```
+sh ./gradlew test --tests "nl.vlugverkoop.Scooter*"
+```
 
 ---
 
@@ -227,6 +232,18 @@ Een browser kan alleen **ophalen** (GET). Om te **plaatsen** (POST) of te **verw
 
 ---
 
+## Advertentiekosten
+
+De verkoper betaalt per advertentie vaste kosten. De server bepaalt het bedrag en stuurt het in elk antwoord mee als `listingFee`. De app kan het niet zelf opgeven.
+
+| Voertuig | `listingFee` |
+|---|---|
+| Auto | € 9,95 |
+| Motor | € 4,95 |
+| Scooter | € 2,95 |
+
+---
+
 ## Nog te doen / overleggen met het team
 
 - **Eén adres voor alle voertuigen.** Volgens het plan van aanpak wordt het uiteindelijk `GET /vehicles?type=SCOOTER`. Nu hebben auto's `/cars` en scooters `/scooters`.
@@ -234,7 +251,6 @@ Een browser kan alleen **ophalen** (GET). Om te **plaatsen** (POST) of te **verw
 - **Advertentiekosten (`listingFee`).** Betalingen vallen volgens het plan buiten de scope, en het brandbook belooft "geen verborgen kosten". Bespreek of deze kosten eruit moeten.
 - **Dezelfde nummers.** Auto's en scooters hebben allebei nummer 1, 2 en 3. Met een echte database moet elk voertuig een eigen nummer krijgen.
 - **Unit-tests.** Volgens het plan horen bij deel 1 ook 3 unit-tests, bijvoorbeeld "een negatieve prijs wordt geweigerd".
-- **Spelling van de merknaam.** In `Vehicle.kt`, `Car.kt` en `Motorcycle.kt` staat nog "Vlugverkoop" in plaats van "VlugVerkoop".
 
 ---
 

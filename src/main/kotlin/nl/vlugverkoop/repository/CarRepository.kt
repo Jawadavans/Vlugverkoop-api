@@ -20,12 +20,11 @@ class CarRepository {
     fun getAll(): List<Car> = cars.toList()
 
     /**
-     * Returns the cars that match every filter that is given.
-     * A filter that is null is ignored.
+     * Returns the cars that pass every filter. A filter that is null is skipped.
      *
-     * @param search text that must appear in the brand or model (not case sensitive).
-     * @param maxPrice highest price in euro.
-     * @param maxMileage highest mileage in km.
+     * @param search text that must appear in the brand or model, e.g. "volkswagen".
+     * @param maxPrice highest price the buyer wants to pay.
+     * @param maxMileage highest mileage the buyer accepts.
      * @param doors exact number of doors.
      */
     fun find(
@@ -33,28 +32,31 @@ class CarRepository {
         maxPrice: Double? = null,
         maxMileage: Int? = null,
         doors: Int? = null
-    ): List<Car> = cars.filter { car ->
-        (search == null || car.brand.contains(search, ignoreCase = true) || car.model.contains(search, ignoreCase = true)) &&
-                (maxPrice == null || car.price <= maxPrice) &&
-                (maxMileage == null || car.mileage <= maxMileage) &&
-                (doors == null || car.doors == doors)
+    ): List<Car> = cars.filter {
+        (search.isNullOrBlank() || "${it.brand} ${it.model}".contains(search.trim(), ignoreCase = true)) &&
+            (maxPrice == null || it.price <= maxPrice) &&
+            (maxMileage == null || it.mileage <= maxMileage) &&
+            (doors == null || it.doors == doors)
     }
 
-    /** Returns the car with the given id, or null if it does not exist. */
+    /** Returns the car with this [id], or null when it does not exist. */
     fun getById(id: Int): Car? = cars.find { it.id == id }
 
-    /** Returns the id the next new car will get. */
+    /** Returns the id the next new car should get. */
     fun nextId(): Int = (cars.maxOfOrNull { it.id } ?: 0) + 1
 
-    /** Adds a car that was already validated. Returns the saved car. */
-    fun add(car: Car): Car {
+    /** Stores a new car. */
+    fun add(car: Car) {
         cars.add(car)
-        return car
     }
 
-    /** Replaces the car with the given id. Returns false if that car does not exist. */
-    fun update(id: Int, car: Car): Boolean {
-        val index = cars.indexOfFirst { it.id == id }
+    /**
+     * Replaces the stored car that has the same id as [car].
+     *
+     * @return false when no car with that id exists.
+     */
+    fun update(car: Car): Boolean {
+        val index = cars.indexOfFirst { it.id == car.id }
         if (index == -1) {
             return false
         }
@@ -62,6 +64,6 @@ class CarRepository {
         return true
     }
 
-    /** Deletes the car with the given id. Returns true if a car was removed. */
+    /** Removes the car with this [id]. Returns false when it did not exist. */
     fun delete(id: Int): Boolean = cars.removeIf { it.id == id }
 }

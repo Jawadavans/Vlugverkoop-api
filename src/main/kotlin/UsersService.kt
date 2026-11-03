@@ -41,17 +41,17 @@ class ExposedUserService(val database: R2dbcDatabase) {
         }
     }
 
-    suspend fun update(id: UInt, user: ExposedUser) {
-        suspendTransaction(database) {
-            Users.update({ Users.id eq id }) {
-                it[name] = user.name
-                it[age] = user.age
-            }
-        }
+    /** Returns false when no user with this [id] exists. */
+    suspend fun update(id: UInt, user: ExposedUser): Boolean = suspendTransaction(database) {
+        Users.update({ Users.id eq id }) {
+            it[name] = user.name
+            it[age] = user.age
+        } > 0
     }
 
-    suspend fun delete(id: UInt) {
-        suspendTransaction(database) { Users.deleteWhere { Users.id.eq(id) } }
+    /** Returns false when no user with this [id] exists. */
+    suspend fun delete(id: UInt): Boolean = suspendTransaction(database) {
+        Users.deleteWhere { Users.id.eq(id) } > 0
     }
 
 }

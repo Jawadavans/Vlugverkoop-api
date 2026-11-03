@@ -160,7 +160,8 @@ Vlugverkoop-api/
     │   └── nl/vlugverkoop/
     │       ├── model/
     │       │   ├── Vehicle.kt            ← basisklasse (niet door ons gemaakt)
-    │       │   └── Scooter.kt            ← scooter + PlateColor
+    │       │   ├── PlateColor.kt         ← kentekenkleur
+    │       │   └── Scooter.kt            ← scooter
     │       ├── dto/
     │       │   ├── ScooterResponse.kt    ← verpakking naar de app
     │       │   └── CreateScooterRequest.kt ← plaatsformulier van de app
@@ -280,7 +281,7 @@ class Scooter(
         "Speed class must be 25 or 45 km/h, was $maxSpeedKmh"
     }
 
-    override fun calculateListingFee(): Double = 2.95
+    override fun calculateListingFee(): Double = LISTING_FEE
 }
 ```
 
@@ -367,13 +368,13 @@ Voorbeelden:
 #### Deel 4: de advertentiekosten
 
 ```kotlin
-override fun calculateListingFee(): Double = 2.95
+override fun calculateListingFee(): Double = LISTING_FEE
 ```
 
 - `override` → "ik vul hier de verplichte functie van `Vehicle` in".
 - `fun` → een functie (iets wat de klasse kan **doen**).
 - `: Double` → de functie geeft een kommagetal terug.
-- `= 2.95` → de functie geeft altijd 2,95 terug. Een functie van één regel met `=` heet een **single-expression function**.
+- `= LISTING_FEE` → de functie geeft altijd 2,95 terug. Het bedrag staat als vaste waarde in de `companion object`, net als bij auto (9,95) en motor (4,95). Een functie van één regel met `=` heet een **single-expression function**.
 
 ---
 
@@ -1000,7 +1001,7 @@ Ezelsbruggetje: **2xx = gelukt**, **4xx = fout van de gebruiker**, **5xx = fout 
 |---|---|
 | **De kentekenkleur wordt uitgerekend, niet ingevuld** | Snelheid en kleur horen altijd bij elkaar. Zo kan niemand "45 km/u + blauw" invullen. Een foute combinatie is gewoon onmogelijk. |
 | **Een snelheid die niet 25 of 45 is geeft een fout** | Andere snelheden bestaan niet voor scooters in Nederland. Een fout (`IllegalArgumentException`) voorkomt dat er ooit een foute scooter bestaat. |
-| **`PlateColor` staat in hetzelfde bestand als `Scooter`** | De eerste opdracht was om alleen `Scooter.kt` aan te passen. De Kotlin-conventies staan toe dat nauw verwante dingen in één bestand staan. Hij kan later naar een eigen bestand (`PlateColor.kt`). |
+| **`PlateColor` staat in een eigen bestand** | Net als `LicenseCategory` en `MotorcycleStyle` staat de enum in zijn eigen bestand (`PlateColor.kt`). |
 | **Dezelfde opbouw als auto (Jawad)** | Iedereen in het team herkent de structuur meteen, en later is alles makkelijker samen te voegen. |
 | **Aparte Response en Request (DTO's)** | De app krijgt alleen wat hij nodig heeft. Het model kan veranderen zonder dat de app kapotgaat. |
 | **Opslag in het geheugen (lijst)** | Simpel om mee te beginnen. Later komt er een database voor in de plaats, alleen in de repository. |
@@ -1075,7 +1076,6 @@ Ezelsbruggetje: **2xx = gelukt**, **4xx = fout van de gebruiker**, **5xx = fout 
 | **Database** | Nu staat alles in het geheugen. Later komt er H2 met Exposed (zit al in het project). Dan krijgt ook elk voertuig een eigen nummer, want nu hebben auto 1 en scooter 1 hetzelfde nummer. |
 | **Unit-tests** | Het plan vraagt voor deel 1 ook 3 unit-tests, bijvoorbeeld "een negatieve prijs wordt geweigerd". |
 | **Advertentiekosten** | Betalingen vallen volgens het plan buiten de scope en het brandbook belooft "geen verborgen kosten". Met het team bespreken of `calculateListingFee` eruit moet. |
-| **Spelling** | In `Vehicle.kt`, `Car.kt` en `Motorcycle.kt` staat nog "Vlugverkoop" in plaats van "VlugVerkoop". |
 
 ---
 
@@ -1204,4 +1204,4 @@ Probeer eerst zelf te antwoorden. De antwoorden staan eronder.
 17. Een **integratietest** test meerdere onderdelen samen (loket, magazijn, model, verpakking). Een **unit-test** test één klein stukje apart, bijvoorbeeld alleen de klasse `Scooter`.
 18. `git pull --autostash` gebruiken, of eerst je wijzigingen committen.
 19. `http://127.0.0.1:8080` gebruiken in plaats van `localhost`, of een incognitovenster.
-20. Dezelfde functie werkt per klasse anders. Voorbeeld: `calculateListingFee()` staat in `Vehicle`, maar Car, Motorcycle en Scooter vullen hem elk zelf in (Scooter: 2.95).
+20. Dezelfde functie werkt per klasse anders. Voorbeeld: `calculateListingFee()` staat in `Vehicle`, maar Car, Motorcycle en Scooter vullen hem elk zelf in (Auto: 9.95, Motor: 4.95, Scooter: 2.95).

@@ -10,3 +10,8 @@ local.properties
 
 # Local database
 *.db
+
+# IntelliJ: personal settings stay local, the shared code style stays in Git
+.idea/*
+!.idea/codeStyles/
+*.iml

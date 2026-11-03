@@ -1,7 +1,7 @@
 package nl.vlugverkoop.model
 
 /**
- * Base class for every vehicle that can be listed on Vlugverkoop.
+ * Base class for every vehicle that can be listed on VlugVerkoop.
  */
 abstract class Vehicle(
     val id: Int,
