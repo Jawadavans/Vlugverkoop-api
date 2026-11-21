@@ -29,7 +29,10 @@ dependencies {
     implementation(libs.h2database.h2)
     implementation(libs.h2database.r2dbc)
     implementation(libs.logback.classic)
+    implementation(ktorLibs.client.core)
+    implementation(ktorLibs.client.cio)
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
+    testImplementation(ktorLibs.client.mock)
 }
