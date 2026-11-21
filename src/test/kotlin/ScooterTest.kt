@@ -10,7 +10,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for the validation and plate colour rules of [Scooter].
+ * Unit tests for the validation, plate colour rules and estimated value of [Scooter].
  */
 class ScooterTest {
 
@@ -70,5 +70,14 @@ class ScooterTest {
         assertTrue(scooter(year = 1950).validate().isEmpty())
         assertTrue(scooter(year = currentYear).validate().isEmpty())
         assertTrue(scooter(price = 25_000.0).validate().isEmpty())
+    }
+
+    @Test
+    fun `estimated value is lower for 25 kmh scooters`() {
+        val fast = scooter(maxSpeedKmh = 45)
+        val slow = scooter(maxSpeedKmh = 25)
+
+        assertEquals(1590.0, fast.estimatedValue(currentYear = 2026))
+        assertEquals(1431.0, slow.estimatedValue(currentYear = 2026))
     }
 }

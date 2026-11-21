@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for the validation and licence rules of [Motorcycle].
+ * Unit tests for the validation, licence rules and estimated value of [Motorcycle].
  */
 class MotorcycleTest {
 
@@ -73,5 +73,14 @@ class MotorcycleTest {
         assertTrue(motorcycle(engineCc = 2500).validate().isEmpty())
         assertTrue(motorcycle(powerKw = 12).validate().isEmpty())
         assertTrue(motorcycle(powerKw = 300, licenseCategory = LicenseCategory.A).validate().isEmpty())
+    }
+
+    @Test
+    fun `estimated value is lower for motorcycles below 35 kW`() {
+        val strong = motorcycle(powerKw = 35)
+        val weak = motorcycle(engineCc = 125, powerKw = 11, licenseCategory = LicenseCategory.A1)
+
+        assertEquals(2838.0, strong.estimatedValue(currentYear = 2026))
+        assertEquals(2554.2, weak.estimatedValue(currentYear = 2026))
     }
 }

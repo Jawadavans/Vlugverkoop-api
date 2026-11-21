@@ -17,7 +17,8 @@ data class ScooterResponse(
     val mileage: Int,
     val maxSpeedKmh: Int,
     val plateColor: PlateColor,
-    val listingFee: Double
+    val listingFee: Double,
+    val estimatedValue: Double
 )
 
 /** Converts a Scooter into a ScooterResponse. */
@@ -30,5 +31,6 @@ fun Scooter.toResponse(): ScooterResponse = ScooterResponse(
     mileage = mileage,
     maxSpeedKmh = maxSpeedKmh,
     plateColor = plateColor,
-    listingFee = calculateListingFee()
+    listingFee = calculateListingFee(),
+    estimatedValue = estimatedValue()
 )

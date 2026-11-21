@@ -20,7 +20,8 @@ data class MotorcycleResponse(
     val powerKw: Int,
     val style: MotorcycleStyle,
     val licenseCategory: LicenseCategory,
-    val listingFee: Double
+    val listingFee: Double,
+    val estimatedValue: Double
 )
 
 /** Converts a Motorcycle into a MotorcycleResponse. */
@@ -35,5 +36,6 @@ fun Motorcycle.toResponse(): MotorcycleResponse = MotorcycleResponse(
     powerKw = powerKw,
     style = style,
     licenseCategory = licenseCategory,
-    listingFee = calculateListingFee()
+    listingFee = calculateListingFee(),
+    estimatedValue = estimatedValue()
 )

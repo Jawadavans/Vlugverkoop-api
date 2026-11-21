@@ -25,6 +25,9 @@ class Motorcycle(
 
     override fun calculateListingFee(): Double = LISTING_FEE
 
+    /** Motorcycles below 35 kW (the A2 limit) are worth a bit less. */
+    override fun valueFactor(): Double = if (powerKw >= MIN_POWER_KW_FULL_VALUE) 1.0 else 0.9
+
     /**
      * Checks whether this motorcycle may be listed.
      * Returns a list of error messages; an empty list means the motorcycle is valid.
@@ -67,5 +70,6 @@ class Motorcycle(
         private const val MAX_ENGINE_CC = 2500
         private const val MIN_POWER_KW = 1
         private const val MAX_POWER_KW = 300
+        private const val MIN_POWER_KW_FULL_VALUE = 35
     }
 }

@@ -28,6 +28,9 @@ class Scooter(
 
     override fun calculateListingFee(): Double = LISTING_FEE
 
+    /** 25 km/h scooters are worth a bit less than 45 km/h scooters. */
+    override fun valueFactor(): Double = if (maxSpeedKmh >= FAST_SPEED_KMH) 1.0 else 0.9
+
     /**
      * Checks whether this scooter may be listed.
      * Returns a list of error messages; an empty list means the scooter is valid.
@@ -64,5 +67,6 @@ class Scooter(
         private const val LISTING_FEE = 2.95
         private const val MIN_YEAR = 1950
         private const val MAX_PRICE = 25_000.0
+        private const val FAST_SPEED_KMH = 45
     }
 }

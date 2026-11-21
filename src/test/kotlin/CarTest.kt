@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Unit tests for the validation rules of [Car].
+ * Unit tests for the validation rules and the estimated value of [Car].
  */
 class CarTest {
 
@@ -57,5 +57,14 @@ class CarTest {
         assertTrue(car(year = currentYear).validate().isEmpty())
         assertTrue(car(doors = 2).validate().isEmpty())
         assertTrue(car(doors = 7).validate().isEmpty())
+    }
+
+    @Test
+    fun `estimated value goes down with age, mileage and few doors`() {
+        val tesla = car(year = 2022, price = 34900.0, mileage = 48000, doors = 4)
+        val peugeot = car(year = 2015, price = 6950.0, mileage = 135000, doors = 3)
+
+        assertEquals(23732.0, tesla.estimatedValue(currentYear = 2026))
+        assertEquals(1056.4, peugeot.estimatedValue(currentYear = 2026))
     }
 }

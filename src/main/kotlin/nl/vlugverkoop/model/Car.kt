@@ -19,6 +19,9 @@ class Car(
 
     override fun calculateListingFee(): Double = LISTING_FEE
 
+    /** Cars with fewer than 4 doors are worth a bit less. */
+    override fun valueFactor(): Double = if (doors >= MIN_DOORS_FULL_VALUE) 1.0 else 0.95
+
     /**
      * Checks whether this car may be listed.
      * Returns a list of error messages; an empty list means the car is valid.
@@ -53,5 +56,6 @@ class Car(
         private const val MIN_YEAR = 1950
         private const val MIN_DOORS = 2
         private const val MAX_DOORS = 7
+        private const val MIN_DOORS_FULL_VALUE = 4
     }
 }

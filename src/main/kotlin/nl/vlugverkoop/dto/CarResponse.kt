@@ -15,7 +15,8 @@ data class CarResponse(
     val price: Double,
     val mileage: Int,
     val doors: Int,
-    val listingFee: Double
+    val listingFee: Double,
+    val estimatedValue: Double
 )
 
 /** Converts a Car into a CarResponse. */
@@ -27,5 +28,6 @@ fun Car.toResponse(): CarResponse = CarResponse(
     price = price,
     mileage = mileage,
     doors = doors,
-    listingFee = calculateListingFee()
+    listingFee = calculateListingFee(),
+    estimatedValue = estimatedValue()
 )
