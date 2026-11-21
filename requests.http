@@ -274,3 +274,12 @@ DELETE http://127.0.0.1:8080/motorcycles/1
 
 ### Delete a motorcycle that does not exist (404)
 DELETE http://127.0.0.1:8080/motorcycles/99
+
+### ---------- LICENCE PLATE CHECK (RDW) ----------
+### These requests go to the real RDW Open Data, so they need internet.
+
+### Check a plate, typed with dashes and small letters (200, or 404 when RDW does not know it)
+GET http://127.0.0.1:8080/plates/ab-123-c
+
+### Check a plate that is not a valid Dutch plate (400 PLATE_INVALID)
+GET http://127.0.0.1:8080/plates/AB-12-C
